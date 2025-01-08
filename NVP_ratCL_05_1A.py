@@ -10,14 +10,17 @@ This script will run the Experiment 1_A of the NVP_ratCL_05_ Experiments defined
 
 Duration about 17 minutes
 
-Ready Status: Need to implembent _TIME_BETWEEN_STIMULATIONS properly
+Ready Status: ready for Fabrizio to check
 """
 
 
 #%% Path and Parameters
 # Params to be set by UMH
-_STIMULATION_ELECTRODE = xy # electrode to stimulate set to a working electrode that can be used for closed loop testing. keep this electrode for all the tests
 
+
+
+_STIMULATION_ELECTRODE = None # electrode to stimulate set to a working electrode that can be used for closed loop testing. keep this electrode for all the tests
+raise ValueError("Stimulation electrode not set") if _STIMULATION_ELECTRODE is None else None
 
 # Params preset by INI (Niklas), can be changed if required
 _TARGET_THRESHOLDS = [10,25,50,75] # target thresholds for the stimulation 
@@ -29,7 +32,13 @@ _TIME_BETWEEN_STIMULATIONS = 5 # time between stimulations in seconds
 _FILENAME_BASE = 'NVP_ratCL_05_Exp1_A' # base name for the files
 
 
+
+
 dummy_run = False  # Set to True to run without the hardware
+# LFP-RMS calculation parameters
+window_size = 0.5  # window size in seconds to calculate the activity over
+offset_to_stim = 0.1 # offset in seconds to the stimulation start / stop
+stimulation_time = 0.1  # the duration of a stimulation in seconds, can be calculated from the stimulation parameters 100hz * 10  pulses -> 0.1 seconds
 path_save = r'C:\Users\s\Desktop\Closed_Loop_Neuroviper\data\closed_loop\\'
 path_proto = 'C:/Users/s/Desktop/Closed_Loop_Neuroviper/protocols/'  # Path to the protocol files
 
@@ -39,13 +48,11 @@ num_opt = _AMOUNT_OF_STIMULATIONS  # number of closed loop runs
 fs = 30000   # sampling frequency
 STIM_EL = [_STIMULATION_ELECTRODE]  # Electrodes to stimulate
 REC_EL = _STIMULATION_ELECTRODE   # electrode to record from
-npoints = fs*3  #number of samples you want to get from the recording
+
+
 #means_it = 5   #number of times to repeat the stimulation to create an average response, not used anymore
 
 
-# LFP-RMS calculation parameters
-window_size = 0.5  # window size in seconds to calculate the activity over
-offset_to_stim = 0.1 # offset in seconds to the stimulation start / stop
 
 
 # ToDO
@@ -84,7 +91,9 @@ def runExperiments(Threshold):
     from scipy import signal
     import time
 
-
+    analysis_time_window = np.ceil(window_size*2 + offset_to_stim*2+.1)  # timewindow for npoints analysis. 2 times the window size + 2 times the offset to stim  + 0.1 second for enough time suring the stimulation, also round up to get enough data points
+    
+    npoints = fs*analysis_time_window  #number of samples you want to get from the recording
 
     """
     Main function for executing the closed-loop stimulation experiment.
@@ -175,7 +184,6 @@ def runExperiments(Threshold):
             config['phase1'] = -stim_current[i]
             config['phase2'] = stim_current[i]
             config['pulses'] = 10
-
             config['duration'] = np.ceil(config['pulses'] / config['frequency']  * 1000) # milliseconds is related to pulses and frequency
 
             config['offset'] = off_interleaving[i]
@@ -196,7 +204,9 @@ def runExperiments(Threshold):
         ACTIVITY = []
 
         RIPPLE.shoot(STIM_PATTERNS['stim']) #send the stimulation
-        RIPPLE._delay(1.5)          #wait 500ms
+        wait_time = stimulation_time + window_size + offset_to_stim + 0.1  # wait time for the stimulation to finish and the activity to be cmeasure add 0.1 for extra time
+
+        RIPPLE._delay(wait_time)          #wait 500ms
         (data, _) = xp.cont_raw(npoints, elecs_stim)    #get the data (last 3*30000 samples)       
         
         if len(data) == number_electrodes*npoints:
@@ -234,8 +244,8 @@ def runExperiments(Threshold):
         
         activity = LFP(dat_cond, fs=fs) - LFP(dat_before, fs=fs)
                 
-            
-        RIPPLE._delay(0.5) 
+        wait_time_2 = (_TIME_BETWEEN_STIMULATIONS - wait_time) if _TIME_BETWEEN_STIMULATIONS > wait_time else 0.1 # wait the remaining time from _TIME_BETWEEN_STIMULATIONS or at least 0.1s as buffer
+        RIPPLE._delay(wait_time_2) 
 
         NEW_Current = calc_feedback_1ch(activity, STIM_EL, CURRENT)
         print(f'Currents: {CURRENT} -> {NEW_Current}')
