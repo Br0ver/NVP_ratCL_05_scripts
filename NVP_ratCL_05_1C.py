@@ -6,9 +6,14 @@ Changed: 7.11.2025
 
 @author: Fabrizio, (changed by niklas)
 
-This script will run the Experiment 1_A of the NVP_ratCL_05_ Experiments defined in:  https://docs.google.com/document/d/1BmLcY70xOPmVm7B05kRrnfJhQXqwfQyuRvYxLQ4PX_k/edit?tab=t.0 
+This script will run the Experiment 1_C of the NVP_ratCL_05_ Experiments defined in:  https://docs.google.com/document/d/1BmLcY70xOPmVm7B05kRrnfJhQXqwfQyuRvYxLQ4PX_k/edit?tab=t.0 
+
+Same as 1A, but random extra electrodes [_EXTRA_ELECTRODES] are getting stimulated in the meantime. Set 10 extra working electrodes in the config. 
 
 Duration about 17 minutes
+Changes:
+  - Added the extra electrodes to the stimulation electrodes
+  - set random current for extra electrodes
 
 Ready Status: ready for Fabrizio to check
 """
@@ -16,11 +21,13 @@ Ready Status: ready for Fabrizio to check
 
 #%% Path and Parameters
 # Params to be set by UMH
-
-
-
-_STIMULATION_ELECTRODE = None # electrode to stimulate set to a working electrode that can be used for closed loop testing. keep this electrode for all the tests
+_STIMULATION_ELECTRODE = None # electrode to stimulate set to a working electrode that can be used for closed loop testing. keep this electrode for all the tests, write as integer e.g. 19
 if _STIMULATION_ELECTRODE is None: raise ValueError("Stimulation electrode not set")
+
+_EXTRA_ELECTRODES = None # extra electrodes to stimulate in the e.g. [1,2,3,4,5,6,7,8,9,10] 
+if _EXTRA_ELECTRODES is None: raise ValueError("extra Stimulation electrode not set")
+
+
 
 # Params preset by INI (Niklas), can be changed if required
 _TARGET_THRESHOLDS = [10,25,50,75] # target thresholds for the stimulation 
@@ -30,7 +37,7 @@ _CURRENT_STEP_SIZE = 3 # step size in uA to increase the Current for the closed 
 _AMOUNT_OF_STIMULATIONS = 50 # number of stimulations with each parameter configuration
 _TIME_BETWEEN_STIMULATIONS = 5 # time between stimulations in seconds
 _FILENAME_BASE = 'NVP_ratCL_05_Exp1_A' # base name for the files
-
+_SEED = 42
 
 
 
@@ -47,6 +54,7 @@ path_proto = 'C:/Users/s/Desktop/Closed_Loop_Neuroviper/protocols/'  # Path to t
 num_opt = _AMOUNT_OF_STIMULATIONS  # number of closed loop runs  
 fs = 30000   # sampling frequency
 STIM_EL = [_STIMULATION_ELECTRODE]  # Electrodes to stimulate
+STIM_EL.extend(_EXTRA_ELECTRODES)  # add the extra electrodes to the stimulation electrodes
 REC_EL = _STIMULATION_ELECTRODE   # electrode to record from
 
 
@@ -111,6 +119,7 @@ def runExperiments(Threshold):
     Returns:
         None
     """
+    np.random.seed(_SEED)
 
     today = datetime.now().strftime("%Y_%m_%d")
     dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
@@ -164,6 +173,9 @@ def runExperiments(Threshold):
         #create the stimulation pattern
         stim_electrodes = STIM_EL
         stim_current = CURRENT
+        extra_elec_currents = np.random.randint(0, _MAX_CURRENT, size=len(_EXTRA_ELECTRODES))
+        stim_current.extend(extra_elec_currents)
+
         off_interleaving = offset[:len(stim_electrodes)]
         
         ELECTRODES.append(stim_electrodes)

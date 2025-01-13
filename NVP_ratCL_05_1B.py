@@ -6,9 +6,9 @@ Changed: 7.11.2025
 
 @author: Fabrizio, (changed by niklas)
 
-This script will run the Experiment 1_A of the NVP_ratCL_05_ Experiments defined in:  https://docs.google.com/document/d/1BmLcY70xOPmVm7B05kRrnfJhQXqwfQyuRvYxLQ4PX_k/edit?tab=t.0 
+This script will run the Experiment 1_B of the NVP_ratCL_05_ Experiments defined in:  https://docs.google.com/document/d/1BmLcY70xOPmVm7B05kRrnfJhQXqwfQyuRvYxLQ4PX_k/edit?tab=t.0 
 
-Duration about 17 minutes
+Duration about 5 minutes
 
 Ready Status: ready for Fabrizio to check
 """
@@ -28,7 +28,7 @@ _TARGET_THRESHOLDS = [10,25,50,75] # target thresholds for the stimulation
 _MAX_CURRENT = 30 # maximum current in uA
 _CURRENT_STEP_SIZE = 3 # step size in uA to increase the Current for the closed loop
 _AMOUNT_OF_STIMULATIONS = 50 # number of stimulations with each parameter configuration
-_TIME_BETWEEN_STIMULATIONS = 5 # time between stimulations in seconds
+_TIME_BETWEEN_STIMULATIONS = 0 # time between stimulations in seconds
 _FILENAME_BASE = 'NVP_ratCL_05_Exp1_A' # base name for the files
 
 
